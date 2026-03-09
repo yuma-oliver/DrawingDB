@@ -2,27 +2,41 @@ import { create } from 'zustand';
 import { useSearchStore } from './searchStore';
 
 export const useDrawingStore = create((set, get) => ({
-  selectedDrawing: null,
-  selectedPage: null,
+  selectedPdf: null,
+  selectedGroup: null,
+  selectedGroupPage: null,
+  viewerMode: 'group', // 'group' | 'original'
   
-  selectDrawingById: (id) => {
-    const { allDrawings } = useSearchStore.getState();
-    const drawing = allDrawings.find(d => d.id === id);
-    if (drawing) {
+  selectGroupById: (groupId) => {
+    const { allDocs } = useSearchStore.getState();
+    const pdf = allDocs.find(doc => doc.groups && doc.groups.some(g => g.id === groupId));
+    
+    if (pdf) {
+      const group = pdf.groups.find(g => g.id === groupId);
       set({ 
-        selectedDrawing: drawing,
-        selectedPage: drawing.pages && drawing.pages.length > 0 ? drawing.pages[0] : null
+        selectedPdf: pdf,
+        selectedGroup: group,
+        selectedGroupPage: group.startPage,
+        viewerMode: 'group'
       });
     } else {
-      set({ selectedDrawing: null, selectedPage: null });
+      set({ selectedPdf: null, selectedGroup: null, selectedGroupPage: null, viewerMode: 'group' });
     }
   },
   
-  selectPage: (page) => {
-    set({ selectedPage: page });
+  selectGroup: (group) => {
+    set({ selectedGroup: group, selectedGroupPage: group.startPage, viewerMode: 'group' });
+  },
+
+  setGroupPage: (pageNum) => {
+    set({ selectedGroupPage: pageNum });
+  },
+
+  setViewerMode: (mode) => {
+    set({ viewerMode: mode });
   },
   
   clearSelection: () => {
-    set({ selectedDrawing: null, selectedPage: null });
+    set({ selectedPdf: null, selectedGroup: null, selectedGroupPage: null, viewerMode: 'group' });
   }
 }));

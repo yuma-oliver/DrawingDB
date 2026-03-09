@@ -1,8 +1,8 @@
 import { Box, Chip, FormControl, InputLabel, MenuItem, Select, Typography, Paper } from '@mui/material';
 import { useSearchStore } from '../../../store/searchStore';
 
-const AVAILABLE_TAGS = ['建築', '設備', '平面図', '詳細図', '1階', '配管', 'B棟', '内装', '外構', '植栽', '照明', 'エントランス'];
-const DRAWING_TYPES = ['All', 'Plan', 'Equipment', 'Detail', 'Exterior'];
+const AVAILABLE_TAGS = ['ソファ', 'チェア', 'テーブル', 'ベッド', '収納', '照明', 'ミニバー', 'TV台', '客室', 'ロビー', '什器', 'カウンター'];
+const DRAWING_TYPES = ['All', '家具図', '什器図'];
 
 export default function FilterPanel() {
   const { selectedTags, setSelectedTags, drawingType, setDrawingType, performSearch } = useSearchStore();
@@ -33,10 +33,8 @@ export default function FilterPanel() {
               onChange={handleTypeChange}
             >
               <MenuItem value="All">すべて</MenuItem>
-              <MenuItem value="Plan">平面図</MenuItem>
-              <MenuItem value="Equipment">設備図</MenuItem>
-              <MenuItem value="Detail">詳細図</MenuItem>
-              <MenuItem value="Exterior">外構図</MenuItem>
+              <MenuItem value="家具図">家具図</MenuItem>
+              <MenuItem value="什器図">什器図</MenuItem>
             </Select>
           </FormControl>
         </Box>

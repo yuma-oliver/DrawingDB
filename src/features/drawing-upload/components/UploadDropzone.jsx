@@ -1,53 +1,138 @@
-import { Box, Typography, Button, Paper } from '@mui/material';
-import { CloudUpload as CloudUploadIcon, Add as AddIcon } from '@mui/icons-material';
+import { Box, Typography, Button, Paper, CircularProgress, LinearProgress } from '@mui/material';
+import { CloudUpload as CloudUploadIcon, Add as AddIcon, AutoFixHigh as AutoFixHighIcon } from '@mui/icons-material';
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSearchStore } from '../../../store/searchStore';
+import { analyzeTagsAndTitle } from '../../../shared/utils/tagging';
+import { pdfjs } from 'react-pdf';
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
 
 export default function UploadDropzone() {
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
-  const { addDrawing } = useSearchStore();
+  const { addPdf } = useSearchStore();
   const [isDragOver, setIsDragOver] = useState(false);
+  
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [statusMessage, setStatusMessage] = useState('');
 
-  const handleFile = (file) => {
+  const handleFile = async (file) => {
     if (file && file.type === 'application/pdf') {
-      const newId = Date.now().toString();
-      const pdfUrl = URL.createObjectURL(file);
-      
-      const newDrawing = {
-        id: newId,
-        title: file.name.replace(/\.[^/.]+$/, ""), // 拡張子を削除してタイトルに
-        projectName: '未設定の案件',
-        tags: ['新規'],
-        description: 'アップロードされたばかりの図面データです。',
-        pageCount: 1, // PDFのページ数を取得するにはライブラリが必要なため仮で1
-        thumbnail: 'https://placehold.co/600x400/E3F2FD/1565C0?text=NEW+PDF', 
-        drawingType: 'Plan',
-        note: '',
-        pdfUrl: pdfUrl, // iframe用にURLを保持
-        pages: [
-          { id: `${newId}-1`, pageNum: 1, type: '全体' }
-        ]
-      };
-      
-      addDrawing(newDrawing);
-      navigate(`/drawings/${newId}`);
+      setIsProcessing(true);
+      setProgress(0);
+      setStatusMessage('PDFをアップロード中...');
+
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+        const numPages = pdf.numPages;
+        let extractedData = [];
+
+        setStatusMessage('AIがページ構造とテキストを解析中...');
+        for (let i = 1; i <= numPages; i++) {
+          try {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const textLines = textContent.items.map(item => item.str).join(' ');
+            
+            // サムネイル生成
+            const viewport = page.getViewport({ scale: 0.5 });
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.height = viewport.height;
+            canvas.width = viewport.width;
+            await page.render({ canvasContext: context, viewport }).promise;
+            const thumbnailDataUrl = canvas.toDataURL('image/jpeg', 0.8);
+
+            extractedData.push({ 
+              pageNum: i, 
+              text: textLines, 
+              items: textContent.items,
+              thumbnail: thumbnailDataUrl 
+            });
+          } catch (err) {
+            console.warn(`Failed to extract text from page ${i}`, err);
+          }
+          setProgress((i / numPages) * 100);
+        }
+
+        setStatusMessage('解析完了！');
+        await new Promise(r => setTimeout(r, 500));
+        
+        finalizeUpload(file, numPages, extractedData);
+      } catch (e) {
+        console.error("Failed to process PDF", e);
+        alert('PDFファイルの処理中にエラーが発生しました。');
+        setIsProcessing(false);
+      }
     } else {
       alert('PDFファイルを選択してください。');
     }
   };
 
+  const finalizeUpload = (file, numPages, extractedData) => {
+    const newPdfId = `pdf-${Date.now()}`;
+    const pdfUrl = URL.createObjectURL(file);
+    
+    let groups = [];
+    
+    let currentStart = 1;
+    let groupIndex = 1;
+    
+    while (currentStart <= numPages) {
+      // 現在はルールベースでテキスト抽出を行いますが、
+      // POCとしての複数グループ生成をシミュレートするためページはランダム区切りにします。
+      const groupSize = Math.floor(Math.random() * 3) + 1; 
+      const currentEnd = Math.min(currentStart + groupSize - 1, numPages);
+      const pagesArray = Array.from({ length: currentEnd - currentStart + 1 }, (_, i) => currentStart + i);
+      let combinedPages = [];
+      pagesArray.forEach(p => {
+        const pageData = extractedData.find(d => d.pageNum === p);
+        if (pageData) combinedPages.push(pageData);
+      });
+
+      // カスタム辞書とルールによるスコアリングタグ解析とタイトル抽出の実行
+      const tagData = analyzeTagsAndTitle(combinedPages);
+      
+      groups.push({
+        id: `${newPdfId}-g${groupIndex}`,
+        startPage: currentStart,
+        endPage: currentEnd,
+        pageIds: pagesArray.map(p => `p${p}`),
+        pages: pagesArray,
+        ...tagData, // title, titleEvidence, mainTag, subTags, drawingType, spaceTags, attributeTags, evidence, confidence, tags を展開
+        description: `AIによってテキストが解析され、自動分類・抽出された図面セット（P.${currentStart}〜P.${currentEnd}）です。`,
+        thumbnail: combinedPages.length > 0 && combinedPages[0].thumbnail ? combinedPages[0].thumbnail : `https://placehold.co/400x565/E3F2FD/1565C0?text=Set+${groupIndex}`,
+      });
+      
+      currentStart = currentEnd + 1;
+      groupIndex++;
+    }
+
+    const newPdf = {
+      id: newPdfId,
+      title: file.name,
+      projectName: '未設定の案件',
+      pdfUrl: pdfUrl,
+      groups: groups
+    };
+    
+    addPdf(newPdf);
+    setIsProcessing(false);
+    navigate(`/drawings/${groups[0].id}`);
+  };
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) handleFile(file);
-    // 同じファイルを再度選べるようにクリアしておく
     e.target.value = null;
   };
 
   const onDragOver = (e) => {
     e.preventDefault();
-    setIsDragOver(true);
+    if (!isProcessing) setIsDragOver(true);
   };
 
   const onDragLeave = (e) => {
@@ -58,12 +143,16 @@ export default function UploadDropzone() {
   const onDrop = (e) => {
     e.preventDefault();
     setIsDragOver(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
+    if (!isProcessing) {
+      const file = e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    }
   };
 
   const handleClick = () => {
-    fileInputRef.current?.click();
+    if (!isProcessing) {
+      fileInputRef.current?.click();
+    }
   };
 
   return (
@@ -88,9 +177,10 @@ export default function UploadDropzone() {
           justifyContent: 'center',
           bgcolor: isDragOver ? 'rgba(24, 188, 156, 0.1)' : 'background.default',
           transition: 'all 0.2s ease',
+          pointerEvents: isProcessing ? 'none' : 'auto',
           '&:hover': {
-            bgcolor: 'action.hover',
-            cursor: 'pointer'
+            bgcolor: isProcessing ? 'background.default' : 'action.hover',
+            cursor: isProcessing ? 'default' : 'pointer'
           }
         }}
       >
@@ -102,26 +192,43 @@ export default function UploadDropzone() {
           onChange={handleFileChange}
         />
         
-        <CloudUploadIcon color={isDragOver ? "secondary" : "primary"} sx={{ fontSize: 64, mb: 2 }} />
-        <Typography variant="h6" gutterBottom color={isDragOver ? "secondary.main" : "text.primary"}>
-          PDFファイルをドラッグ＆ドロップするか、クリックして選択してください
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-          最大サイズ: 100MB (PDF形式のみ対応)
-        </Typography>
+        {isProcessing ? (
+          <Box sx={{ width: '100%', maxWidth: 400, textAlign: 'center', py: 2 }}>
+            <AutoFixHighIcon color="secondary" sx={{ fontSize: 64, mb: 2, animation: 'spin 3s linear infinite' }} />
+            <Typography variant="h6" gutterBottom color="secondary.main" fontWeight="bold">
+              {statusMessage}
+            </Typography>
+            <Box sx={{ width: '100%', mt: 3, mb: 1 }}>
+              <LinearProgress variant="determinate" value={progress} color="secondary" sx={{ height: 10, borderRadius: 5 }} />
+            </Box>
+            <Typography variant="body2" color="text.secondary">
+              {Math.floor(progress)}% 完了
+            </Typography>
+          </Box>
+        ) : (
+          <>
+            <CloudUploadIcon color={isDragOver ? "secondary" : "primary"} sx={{ fontSize: 64, mb: 2 }} />
+            <Typography variant="h6" gutterBottom color={isDragOver ? "secondary.main" : "text.primary"}>
+              PDFファイルをドラッグ＆ドロップするか、クリックして選択してください
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
+              最大サイズ: 100MB (PDF形式のみ対応)
+            </Typography>
 
-        <Button
-          variant="contained"
-          size="large"
-          startIcon={<AddIcon />}
-          sx={{ borderRadius: 8, px: 4 }}
-          onClick={(e) => {
-            e.stopPropagation(); // 親のクリックイベントを発火させない
-            handleClick();
-          }}
-        >
-          ファイルを選択
-        </Button>
+            <Button
+              variant="contained"
+              size="large"
+              startIcon={<AddIcon />}
+              sx={{ borderRadius: 8, px: 4 }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleClick();
+              }}
+            >
+              ファイルを選択
+            </Button>
+          </>
+        )}
       </Paper>
 
       <Box sx={{ mt: 4 }}>

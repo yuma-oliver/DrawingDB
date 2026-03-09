@@ -11,16 +11,16 @@ import SimilarDrawingsPanel from '../../features/drawing-similar/components/Simi
 export default function DrawingDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { selectDrawingById, selectedDrawing, clearSelection } = useDrawingStore();
+  const { selectGroupById, selectedGroup, clearSelection } = useDrawingStore();
 
   useEffect(() => {
     if (id) {
-      selectDrawingById(id);
+      selectGroupById(id);
     }
     return () => clearSelection();
-  }, [id, selectDrawingById, clearSelection]);
+  }, [id, selectGroupById, clearSelection]);
 
-  if (!selectedDrawing) {
+  if (!selectedGroup) {
     return (
       <Box sx={{ p: 4, textAlign: 'center' }}>
         <Typography>図面が見つかりません</Typography>
@@ -30,22 +30,11 @@ export default function DrawingDetailPage() {
   }
 
   return (
-    <Box sx={{ height: 'calc(100vh - 100px)', display: 'flex', flexDirection: 'column' }}>
-      {/* 操作バー */}
-      <Box sx={{ mb: 2, display: 'flex', alignItems: 'center' }}>
-        <Button 
-          startIcon={<ArrowBackIcon />} 
-          onClick={() => navigate('/search')}
-          color="inherit"
-        >
-          一覧に戻る
-        </Button>
-      </Box>
-
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* メインレイアウト */}
       <Box sx={{ display: 'flex', flexGrow: 1, gap: 2, overflow: 'hidden' }}>
         {/* 左ペイン：サムネイル */}
-        <Box sx={{ width: 250, flexShrink: 0 }}>
+        <Box sx={{ width: 260, flexShrink: 0 }}>
           <PageThumbnailList />
         </Box>
 
@@ -55,7 +44,7 @@ export default function DrawingDetailPage() {
         </Box>
 
         {/* 右ペイン：情報と類似図面 */}
-        <Box sx={{ width: 350, flexShrink: 0, overflowY: 'auto', pr: 1 }}>
+        <Box sx={{ width: 320, flexShrink: 0, overflowY: 'auto', pr: 1 }}>
           <DrawingInfoPanel />
           <SimilarDrawingsPanel />
         </Box>

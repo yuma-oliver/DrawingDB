@@ -4,14 +4,22 @@ import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const drawerWidth = 240;
+const miniDrawerWidth = 72;
 
 export default function AppLayout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [desktopOpen, setDesktopOpen] = useState(() => {
+    const saved = localStorage.getItem('desktopDrawerOpen');
+    return saved !== null ? saved === 'true' : true;
+  });
   const navigate = useNavigate();
   const location = useLocation();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
+    const newDesktopOpen = !desktopOpen;
+    setDesktopOpen(newDesktopOpen);
+    localStorage.setItem('desktopDrawerOpen', String(newDesktopOpen));
   };
 
   const navItems = [
@@ -22,22 +30,38 @@ export default function AppLayout({ children }) {
   const drawer = (
     <div>
       <Toolbar>
+        <IconButton
+          color="inherit"
+          aria-label="toggle drawer"
+          edge="start"
+          onClick={handleDrawerToggle}
+          sx={{ mr: 1, color: 'text.secondary' }}
+        >
+          <MenuIcon />
+        </IconButton>
         <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold' }}>
           造作図面検索POC
         </Typography>
       </Toolbar>
       <List>
         {navItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
+          <ListItem key={item.text} disablePadding sx={{ display: 'block' }}>
             <ListItemButton 
               selected={location.pathname === item.path || (location.pathname === '/' && item.path === '/search')}
               onClick={() => {
                 navigate(item.path);
                 setMobileOpen(false);
               }}
+              sx={{
+                minHeight: 48,
+                justifyContent: desktopOpen ? 'initial' : 'center',
+                px: 2.5,
+              }}
             >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
+              <ListItemIcon sx={{ minWidth: 0, mr: desktopOpen ? 2 : 'auto', justifyContent: 'center' }}>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText primary={item.text} sx={{ opacity: desktopOpen ? 1 : 0, display: desktopOpen ? 'block' : 'none' }} />
             </ListItemButton>
           </ListItem>
         ))}
@@ -51,20 +75,24 @@ export default function AppLayout({ children }) {
       <AppBar
         position="fixed"
         sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
+          width: { sm: `calc(100% - ${desktopOpen ? drawerWidth : miniDrawerWidth}px)` },
+          ml: { sm: desktopOpen ? `${drawerWidth}px` : `${miniDrawerWidth}px` },
           backgroundColor: '#fff',
           color: '#333',
           boxShadow: 1,
+          transition: theme => theme.transitions.create(['margin', 'width'], {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.leavingScreen,
+          }),
         }}
       >
         <Toolbar>
           <IconButton
             color="inherit"
-            aria-label="open drawer"
+            aria-label="toggle drawer"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
+            sx={{ mr: 2, display: { xs: 'block', sm: 'none' } }}
           >
             <MenuIcon />
           </IconButton>
@@ -75,7 +103,10 @@ export default function AppLayout({ children }) {
       </AppBar>
       <Box
         component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+        sx={{ width: { sm: desktopOpen ? drawerWidth : miniDrawerWidth }, flexShrink: { sm: 0 }, transition: theme => theme.transitions.create('width', {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.leavingScreen,
+        })}}
         aria-label="mailbox folders"
       >
         <Drawer
@@ -94,16 +125,24 @@ export default function AppLayout({ children }) {
           variant="permanent"
           sx={{
             display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            '& .MuiDrawer-paper': { 
+                boxSizing: 'border-box', 
+                width: desktopOpen ? drawerWidth : miniDrawerWidth,
+                overflowX: 'hidden',
+                transition: theme => theme.transitions.create('width', {
+                  easing: theme.transitions.easing.sharp,
+                  duration: theme.transitions.duration.enteringScreen,
+                }),
+            },
           }}
-          open
+          open={true}
         >
           {drawer}
         </Drawer>
       </Box>
       <Box
         component="main"
-        sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` }, height: '100vh', display: 'flex', flexDirection: 'column' }}
+        sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${desktopOpen ? drawerWidth : miniDrawerWidth}px)` }, height: '100vh', display: 'flex', flexDirection: 'column' }}
       >
         <Toolbar />
         <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
