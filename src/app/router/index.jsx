@@ -3,6 +3,7 @@ import AppLayout from '../../shared/layouts/AppLayout';
 import SearchPage from '../../pages/SearchPage';
 import UploadPage from '../../pages/UploadPage';
 import DrawingDetailPage from '../../pages/DrawingDetailPage';
+import ManagePage from '../../pages/ManagePage';
 
 export const router = createBrowserRouter([
   {
@@ -20,6 +21,10 @@ export const router = createBrowserRouter([
   {
     path: '/drawings/:id',
     element: <AppLayout><DrawingDetailPage /></AppLayout>,
+  },
+  {
+    path: '/manage',
+    element: <AppLayout><ManagePage /></AppLayout>,
   },
   {
     path: '*',

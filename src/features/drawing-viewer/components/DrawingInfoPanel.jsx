@@ -26,7 +26,7 @@ export default function DrawingInfoPanel() {
         <Typography variant="subtitle1" fontWeight="bold" sx={{ lineHeight: 1.4, mb: 1.5 }}>
           {selectedGroup.title}
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+        <Typography component="div" variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
           <Chip label={selectedGroup.drawingType || '詳細図'} size="small" variant="outlined" sx={{ bgcolor: 'white' }} />
           P.{selectedGroup.startPage}{selectedGroup.startPage !== selectedGroup.endPage ? `-${selectedGroup.endPage}` : ''}
         </Typography>
@@ -58,6 +58,21 @@ export default function DrawingInfoPanel() {
             <Typography variant="caption" color="text.secondary" display="block" fontWeight="bold">案件名</Typography>
             <Typography variant="body2" fontWeight="bold" sx={{ mt: 0.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={selectedPdf.projectName}>
               {selectedPdf.projectName}
+            </Typography>
+          </Box>
+        </Box>
+
+        <Box sx={{ display: 'flex', gap: 2, mt: -1 }}>
+          <Box sx={{ flex: 1, bgcolor: 'grey.50', p: 1.5, borderRadius: 1, border: 1, borderColor: 'divider' }}>
+            <Typography variant="caption" color="text.secondary" display="block" fontWeight="bold">5大市場</Typography>
+            <Typography variant="body2" fontWeight="bold" sx={{ mt: 0.5 }}>
+              {selectedPdf.market || '-'}
+            </Typography>
+          </Box>
+          <Box sx={{ flex: 1, bgcolor: 'grey.50', p: 1.5, borderRadius: 1, border: 1, borderColor: 'divider' }}>
+            <Typography variant="caption" color="text.secondary" display="block" fontWeight="bold">作成年</Typography>
+            <Typography variant="body2" fontWeight="bold" sx={{ mt: 0.5 }}>
+              {selectedPdf.decade || '-'}
             </Typography>
           </Box>
         </Box>

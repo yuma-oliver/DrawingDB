@@ -1,7 +1,8 @@
-import { AppBar, Box, Button, CssBaseline, Drawer, IconButton, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Toolbar, Typography } from '@mui/material';
-import { Menu as MenuIcon, Search as SearchIcon, UploadFile as UploadIcon } from '@mui/icons-material';
+import { AppBar, Box, Button, CssBaseline, Drawer, IconButton, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Toolbar, Typography, Avatar } from '@mui/material';
+import { Menu as MenuIcon, Search as SearchIcon, UploadFile as UploadIcon, FormatListBulleted as ListIcon, Person as PersonIcon } from '@mui/icons-material';
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuthStore } from '../../store/authStore';
 
 const drawerWidth = 240;
 const miniDrawerWidth = 72;
@@ -14,6 +15,7 @@ export default function AppLayout({ children }) {
   });
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuthStore();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -24,7 +26,8 @@ export default function AppLayout({ children }) {
 
   const navItems = [
     { text: '図面検索', icon: <SearchIcon />, path: '/search' },
-    { text: '新規登録', icon: <UploadIcon />, path: '/upload' }
+    { text: '新規登録', icon: <UploadIcon />, path: '/upload' },
+    { text: '図面一覧', icon: <ListIcon />, path: '/manage' }
   ];
 
   const drawer = (
@@ -96,9 +99,20 @@ export default function AppLayout({ children }) {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
             {navItems.find(item => item.path === location.pathname || (location.pathname === '/' && item.path === '/search'))?.text || '図面詳細'}
           </Typography>
+          
+          {user && (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Typography variant="body2" sx={{ fontWeight: 'bold', display: { xs: 'none', sm: 'block' } }}>
+                {user.username}
+              </Typography>
+              <Avatar sx={{ width: 36, height: 36, bgcolor: 'secondary.main', color: '#fff', fontSize: '1rem', fontWeight: 'bold' }}>
+                {user.username.charAt(0)}
+              </Avatar>
+            </Box>
+          )}
         </Toolbar>
       </AppBar>
       <Box

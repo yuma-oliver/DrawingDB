@@ -27,6 +27,42 @@ export default function DrawingPreviewPanel() {
   const handleZoomIn = () => setZoomLevel(z => Math.min(z + 0.2, 3));
   const handleZoomOut = () => setZoomLevel(z => Math.max(z - 0.2, 0.4));
 
+  useEffect(() => {
+    if (viewerMode !== 'group') return;
+
+    const handleKeyDown = (e) => {
+      // Check for Ctrl or Meta (Command) key combinations with +/-
+      if (e.ctrlKey || e.metaKey) {
+        if (e.key === '=' || e.key === '+' || e.key === 'Add') {
+          e.preventDefault();
+          handleZoomIn();
+        } else if (e.key === '-' || e.key === '_' || e.key === 'Subtract') {
+          e.preventDefault();
+          handleZoomOut();
+        }
+      }
+    };
+
+    const handleWheel = (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        if (e.deltaY < 0) {
+          handleZoomIn();
+        } else if (e.deltaY > 0) {
+          handleZoomOut();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('wheel', handleWheel, { passive: false });
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('wheel', handleWheel);
+    };
+  }, [viewerMode]);
+
   return (
     <Paper sx={{ flexGrow: 1, height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden', bgcolor: '#323639', borderRadius: 2 }} elevation={0}>
       {/* ツールバー */}

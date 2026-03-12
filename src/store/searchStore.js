@@ -5,7 +5,9 @@ const getFlatGroups = (pdfs) => {
       ...group,
       pdfId: pdf.id,
       pdfTitle: pdf.title,
-      projectName: pdf.projectName
+      projectName: pdf.projectName,
+      market: pdf.market,
+      decade: pdf.decade
     }))
   );
 };
@@ -14,6 +16,9 @@ export const useSearchStore = create((set, get) => ({
   keyword: '',
   selectedTags: [],
   drawingType: 'All',
+  selectedMarket: 'All',
+  selectedDecade: 'All',
+  selectedProjectName: 'All',
   allDocs: [],
   allGroups: [],
   results: [],
@@ -23,6 +28,9 @@ export const useSearchStore = create((set, get) => ({
   setKeyword: (keyword) => set({ keyword }),
   setSelectedTags: (tags) => set({ selectedTags: tags }),
   setDrawingType: (type) => set({ drawingType: type }),
+  setSelectedMarket: (market) => set({ selectedMarket: market }),
+  setSelectedDecade: (decade) => set({ selectedDecade: decade }),
+  setSelectedProjectName: (projectName) => set({ selectedProjectName: projectName }),
   setViewMode: (mode) => set({ viewMode: mode }),
   setGridSize: (size) => set({ gridSize: size }),
   
@@ -38,10 +46,44 @@ export const useSearchStore = create((set, get) => ({
     get().performSearch();
   },
   
+  removePdf: (pdfId) => {
+    set((state) => {
+      const newDocs = state.allDocs.filter(d => d.id !== pdfId);
+      const newGroups = getFlatGroups(newDocs);
+      return {
+        allDocs: newDocs,
+        allGroups: newGroups
+      };
+    });
+    get().performSearch();
+  },
+
+  updatePdf: (pdfId, updates) => {
+    set((state) => {
+      const newDocs = state.allDocs.map(d => d.id === pdfId ? { ...d, ...updates } : d);
+      const newGroups = getFlatGroups(newDocs);
+      return {
+        allDocs: newDocs,
+        allGroups: newGroups
+      };
+    });
+    get().performSearch();
+  },
+  
   performSearch: () => {
-    const { keyword, selectedTags, drawingType, allGroups } = get();
+    const { keyword, selectedTags, drawingType, selectedMarket, selectedDecade, selectedProjectName, allGroups } = get();
     let filtered = [...allGroups];
     
+    if (selectedMarket !== 'All') {
+      filtered = filtered.filter(p => p.market === selectedMarket);
+    }
+    if (selectedDecade !== 'All') {
+      filtered = filtered.filter(p => p.decade === selectedDecade);
+    }
+    if (selectedProjectName !== 'All') {
+      filtered = filtered.filter(p => p.projectName === selectedProjectName);
+    }
+
     if (keyword) {
       const lowerKeyword = keyword.toLowerCase();
       filtered = filtered.filter(p => 
@@ -73,6 +115,9 @@ export const useSearchStore = create((set, get) => ({
       keyword: '',
       selectedTags: [],
       drawingType: 'All',
+      selectedMarket: 'All',
+      selectedDecade: 'All',
+      selectedProjectName: 'All',
       results: [...allGroups].sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
     });
   }

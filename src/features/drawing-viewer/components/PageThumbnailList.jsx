@@ -79,14 +79,16 @@ export default function PageThumbnailList() {
                     variant: 'body2', 
                     fontWeight: selectedGroup?.id === group.id ? 'bold' : 'medium', 
                     color: selectedGroup?.id === group.id ? 'primary.main' : 'text.primary',
-                    display: '-webkit-box', 
-                    WebkitLineClamp: 2, 
-                    WebkitBoxOrient: 'vertical', 
-                    overflow: 'hidden',
-                    lineHeight: 1.3,
-                    maxHeight: '2.6em',
-                    wordBreak: 'break-all',
-                    mb: 0.5
+                    sx: {
+                      display: '-webkit-box', 
+                      WebkitLineClamp: 2, 
+                      WebkitBoxOrient: 'vertical', 
+                      overflow: 'hidden',
+                      lineHeight: 1.3,
+                      maxHeight: '2.6em',
+                      wordBreak: 'break-all',
+                      mb: 0.5
+                    }
                   }}
                   secondaryTypographyProps={{ 
                     variant: 'caption', 
