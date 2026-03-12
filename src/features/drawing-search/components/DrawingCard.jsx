@@ -84,6 +84,18 @@ export default function DrawingCard({ drawing, viewMode = 'grid' }) {
               </Typography>
             )}
           </Box>
+          <Box sx={{ display: 'flex', gap: 1, mb: 1, mt: -0.5 }}>
+            {drawing.market && (
+               <Typography variant="caption" sx={{ bgcolor: 'secondary.light', color: 'secondary.contrastText', px: 0.8, py: 0.2, borderRadius: 1, fontSize: '0.65rem', fontWeight: 'bold' }}>
+                 {drawing.market}
+               </Typography>
+            )}
+            {drawing.createdYear && (
+               <Typography variant="caption" sx={{ bgcolor: 'info.light', color: 'info.contrastText', px: 0.8, py: 0.2, borderRadius: 1, fontSize: '0.65rem', fontWeight: 'bold' }}>
+                 {drawing.createdYear}
+               </Typography>
+            )}
+          </Box>
           
           <Typography variant="body2" color="text.secondary" sx={{ mb: 'auto', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', fontSize: '0.75rem', lineHeight: 1.4 }}>
             {drawing.description}
