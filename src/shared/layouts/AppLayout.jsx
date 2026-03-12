@@ -1,5 +1,5 @@
 import { AppBar, Box, Button, CssBaseline, Drawer, IconButton, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Toolbar, Typography, Avatar } from '@mui/material';
-import { Menu as MenuIcon, Search as SearchIcon, UploadFile as UploadIcon, FormatListBulleted as ListIcon, Person as PersonIcon } from '@mui/icons-material';
+import { Menu as MenuIcon, Search as SearchIcon, UploadFile as UploadIcon, FormatListBulleted as ListIcon, Person as PersonIcon, Logout as LogoutIcon } from '@mui/icons-material';
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
@@ -15,7 +15,7 @@ export default function AppLayout({ children }) {
   });
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -25,7 +25,7 @@ export default function AppLayout({ children }) {
   };
 
   const navItems = [
-    { text: '図面検索', icon: <SearchIcon />, path: '/search' },
+    { text: 'ダッシュボード', icon: <SearchIcon />, path: '/dashboard' },
     { text: '新規登録', icon: <UploadIcon />, path: '/upload' },
     { text: '図面一覧', icon: <ListIcon />, path: '/manage' }
   ];
@@ -43,14 +43,14 @@ export default function AppLayout({ children }) {
           <MenuIcon />
         </IconButton>
         <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold' }}>
-          造作図面検索POC
+          造作図面検索
         </Typography>
       </Toolbar>
       <List>
         {navItems.map((item) => (
           <ListItem key={item.text} disablePadding sx={{ display: 'block' }}>
-            <ListItemButton 
-              selected={location.pathname === item.path || (location.pathname === '/' && item.path === '/search')}
+            <ListItemButton
+              selected={location.pathname === item.path || (location.pathname === '/' && item.path === '/dashboard')}
               onClick={() => {
                 navigate(item.path);
                 setMobileOpen(false);
@@ -100,10 +100,10 @@ export default function AppLayout({ children }) {
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
-            {navItems.find(item => item.path === location.pathname || (location.pathname === '/' && item.path === '/search'))?.text || '図面詳細'}
+            {navItems.find(item => item.path === location.pathname)?.text || '図面詳細'}
           </Typography>
-          
-          {user && (
+
+          {user ? (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
               <Typography variant="body2" sx={{ fontWeight: 'bold', display: { xs: 'none', sm: 'block' } }}>
                 {user.username}
@@ -111,16 +111,35 @@ export default function AppLayout({ children }) {
               <Avatar sx={{ width: 36, height: 36, bgcolor: 'secondary.main', color: '#fff', fontSize: '1rem', fontWeight: 'bold' }}>
                 {user.username.charAt(0)}
               </Avatar>
+              <Button
+                color="inherit"
+                onClick={() => { logout(); navigate('/'); }}
+                startIcon={<LogoutIcon />}
+                sx={{ ml: 1, textTransform: 'none', fontWeight: 'bold', color: 'text.secondary', '&:hover': { color: 'error.main', bgcolor: 'error.lighter' } }}
+              >
+                ログアウト
+              </Button>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button variant="outlined" color="primary" onClick={() => navigate('/login')} sx={{ borderRadius: 8, textTransform: 'none', fontWeight: 'bold' }}>
+                ログイン
+              </Button>
+              <Button variant="contained" color="secondary" onClick={() => navigate('/register')} sx={{ borderRadius: 8, textTransform: 'none', fontWeight: 'bold', color: '#fff', boxShadow: 'none' }}>
+                アカウント作成
+              </Button>
             </Box>
           )}
         </Toolbar>
       </AppBar>
       <Box
         component="nav"
-        sx={{ width: { sm: desktopOpen ? drawerWidth : miniDrawerWidth }, flexShrink: { sm: 0 }, transition: theme => theme.transitions.create('width', {
+        sx={{
+          width: { sm: desktopOpen ? drawerWidth : miniDrawerWidth }, flexShrink: { sm: 0 }, transition: theme => theme.transitions.create('width', {
             easing: theme.transitions.easing.sharp,
             duration: theme.transitions.duration.leavingScreen,
-        })}}
+          })
+        }}
         aria-label="mailbox folders"
       >
         <Drawer
@@ -139,14 +158,14 @@ export default function AppLayout({ children }) {
           variant="permanent"
           sx={{
             display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { 
-                boxSizing: 'border-box', 
-                width: desktopOpen ? drawerWidth : miniDrawerWidth,
-                overflowX: 'hidden',
-                transition: theme => theme.transitions.create('width', {
-                  easing: theme.transitions.easing.sharp,
-                  duration: theme.transitions.duration.enteringScreen,
-                }),
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: desktopOpen ? drawerWidth : miniDrawerWidth,
+              overflowX: 'hidden',
+              transition: theme => theme.transitions.create('width', {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.enteringScreen,
+              }),
             },
           }}
           open={true}
